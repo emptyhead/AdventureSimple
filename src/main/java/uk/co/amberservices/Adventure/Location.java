@@ -39,6 +39,7 @@ public class Location
     }
 
     public Location(Integer id, String description)
+    //constructor - when creating we shove in an Int id and then the description as a string
     {
         super();
         this.id = id;
