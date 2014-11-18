@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +36,9 @@ public class SimpleGame
     private Map<Integer, Location> locations = new HashMap<Integer, Location>();
     //Locations we can wander around.  Keyed by direction.(???)
     //Keyed by ID number i think
+    
+    private Set<Item> allItems= new HashSet<Item>();
+    //all the items we're going to read in from our itemData.txt file
     
     /**
      * Main method that is going to be run when the game is executed.
@@ -65,6 +69,27 @@ public class SimpleGame
         
         //Read the file and point the locations reference to the returned location map
         this.locations = readFile();
+        
+        //then I want to read through the items file and put each item in the correct location
+        
+        this.allItems = readItemDataFile();
+        
+        //now want to interate through each item and put it in the location
+        Iterator<Item> itemItr = this.allItems.iterator();
+        //create an iterator
+        while (itemItr.hasNext())
+        //while there is an item in the set
+        {
+        	Item tempItem = itemItr.next();
+        	//get a handle on the next item
+        	Location tempLocation = locations.get(tempItem.getItemLocation());
+        	//get a handle on the location that item is supposed to be in
+        	Map<String, String> tempItemMap = tempLocation.getItems();
+        	//get a handle on the itemMap from that location
+        	tempItemMap.put(tempItem.getNoun(), tempItem.getItemDescription());
+        	//put the item in the map, keyed by it's noun
+        }
+        
         /*
          * Now allow the player to wander around.
          * Technically there is no player class!
@@ -73,7 +98,7 @@ public class SimpleGame
         System.out.println("Welcome to the simple game!  Rejoice!");
         System.out.println("typing exit will get you out...");
         System.out.println("");
-        Location location = this.locations.get(1);
+        Location currentLocation = this.locations.get(1);
         
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String text = "";
@@ -88,15 +113,25 @@ public class SimpleGame
         while (!text.equalsIgnoreCase("exit")) 
         {
             //Display the location description and directions available
-            System.out.println(location.getDescription());
-            if (location.getNeighbours().size() > 0)
+            System.out.println(currentLocation.getDescription());
+            if (currentLocation.getNeighbours().size() > 0)
             {
                 System.out.print("exits are ");
             }
             //Iterate over the neighbours and put the keys out.
-            for (Map.Entry<String, Integer> entry: location.getNeighbours().entrySet())
+            for (Map.Entry<String, Integer> entry: currentLocation.getNeighbours().entrySet())
             {
                 System.out.print(entry.getKey() + " ");
+            }
+            
+            if (allItems.size()>0)
+            {
+            	System.out.println("\nYou can also see:");
+            	
+            	for (Map.Entry<String, String> entry: currentLocation.getItems().entrySet())
+            	{
+            		System.out.println(entry.getValue());
+            	}
             }
             System.out.println("");
             System.out.println("What now?");
@@ -119,11 +154,11 @@ public class SimpleGame
                 {
                     //Ok, so what was typed in makes sense (a direction) so
                     //now ;et's see if if it is a valid directions
-                    if (location.getNeighbours().containsKey(text))
+                    if (currentLocation.getNeighbours().containsKey(text))
                     {
                         //All good, lets set the location to the new location
-                        Integer nextLocationId = location.getNeighbours().get(text);
-                        location = locations.get(nextLocationId);
+                        Integer nextLocationId = currentLocation.getNeighbours().get(text);
+                        currentLocation = locations.get(nextLocationId);
                     }
                     else if (text.equalsIgnoreCase("exit"))
                     {
@@ -147,6 +182,40 @@ public class SimpleGame
         
     }
     
+    private Set<Item> readItemDataFile()
+    {
+    	final String currentDir = System.getProperty("user.dir");
+    	final String fileSeparator = System.getProperty("file.separator");
+    	final String fileLocation = currentDir + fileSeparator + "data" + fileSeparator;
+    	final String filename = fileLocation + "itemData.txt";
+    	
+    	String data = null;
+    	BufferedReader in;
+    	
+    	Set<Item> itemSetToReturn = new HashSet<Item>();
+    	
+    	try
+    	{
+    		in = new BufferedReader(new FileReader(filename));
+    		String lineFromFile;
+    		while ((lineFromFile = in.readLine())!=null)
+    		{
+    			data = lineFromFile;
+    			String[] dataArray = data.split(",");
+    			Item itemFromDataFile = new Item(dataArray[0], dataArray[1], Integer.valueOf(dataArray[2]));
+    			//description, noun, location
+    			itemSetToReturn.add(itemFromDataFile);
+    			//keyed by locationId
+    		}
+    		in.close();
+    	}
+    	catch (final IOException e)
+       	{
+       		System.out.println(e);
+       	}
+    	return itemSetToReturn;
+    }
+    
     private Map<Integer, Location> readFile()
     //so this method is going to return a map. This will be popped into a map variable then
     //or rather the map variable will point to the map returned by this
@@ -166,7 +235,8 @@ public class SimpleGame
                 	
         //Create a map of locations - local to this method!
         //dont need to declare it as private then???
-        Map<Integer, Location> localLocations = new HashMap<Integer, Location>();	
+        //this is to hold the hashMap to return from this method
+        Map<Integer, Location> locationMapToReturn = new HashMap<Integer, Location>();	
        
         try
         {
@@ -200,20 +270,20 @@ public class SimpleGame
        			//split the line that was read in from file by commas and put each element in array
        			
        			//now if its a location file set a tempLocation var to point to Location we read in
-       			Location tempLocation = new Location(Integer.valueOf(dataArray[0]), dataArray[1]);
+       			Location locationFromDataFile = new Location(Integer.valueOf(dataArray[0]), dataArray[1]);
            		//element 0=id, element 1=description
            		for (int i = 2; i < dataArray.length -1; i = i + 2)
            		//loop from element 2 to end of array, in steps of 2
            		{
            			String key = dataArray[i];//direction
            			Integer value = Integer.valueOf(dataArray[i + 1]);//id of room to go to
-           			tempLocation.getNeighbours().put(key, value);
+           			locationFromDataFile.getNeighbours().put(key, value);
                     //	location class has method getNeighbours which returns a map
            			//the map is a collection of all the neighbours to this location keyed by direction
                     //	map collection has a method to put shit in the map
                     //	so it puts in direction, roomId
            		}
-           		localLocations.put(tempLocation.getId(), tempLocation);
+           		locationMapToReturn.put(locationFromDataFile.getId(), locationFromDataFile);
                 //	locations is a map containing all the locations in the game
                 //	this puts in the location after its filled it with it's id, description and neighbours
        				
@@ -227,6 +297,6 @@ public class SimpleGame
         
        
        	//ok so pass these locations back to whatever called this method
-       	return localLocations;
+       	return locationMapToReturn;
     }
 }

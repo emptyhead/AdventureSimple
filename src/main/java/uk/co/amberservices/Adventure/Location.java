@@ -17,6 +17,7 @@ public class Location
     private Integer id;
     private String description;
     private Map<String, Integer> neighbours = new HashMap<String, Integer>();
+    private Map<String, String> itemsHere = new HashMap<String, String>();
 
     public Integer getId()
     {
@@ -36,6 +37,11 @@ public class Location
     public Map<String, Integer> getNeighbours()
     {
         return neighbours;
+    }
+    
+    public Map<String, String> getItems()
+    {
+    	return itemsHere;
     }
 
     public Location(Integer id, String description)
