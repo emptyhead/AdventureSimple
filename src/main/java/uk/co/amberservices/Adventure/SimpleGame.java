@@ -124,7 +124,7 @@ public class SimpleGame
                 System.out.print(entry.getKey() + " ");
             }
             
-            if (allItems.size()>0)
+            if (currentLocation.getItems().size()>0)
             {
             	System.out.println("\nYou can also see:");
             	
